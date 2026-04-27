@@ -1,5 +1,5 @@
-from cube_config import FACE_NAMES
-from cube_types import Cubie, Vector
+from rubiksolver.domain.config import FACE_NAMES
+from rubiksolver.domain.types import Cubie, Vector
 
 
 CUBIES = tuple(
@@ -71,4 +71,3 @@ def rotate_vector(vector: Vector, axis: int, angle: int) -> Vector:
         return y, -x, z
 
     raise ValueError(f"Unsupported rotation: axis={axis}, angle={angle}")
-

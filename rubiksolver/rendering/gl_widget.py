@@ -28,9 +28,9 @@ from OpenGL.GL import (
     glViewport,
 )
 
-from cube import RubiksCube
-from cube_moves import move_definition, signed_move_angle
-from render_data import (
+from rubiksolver.domain.cube import RubiksCube
+from rubiksolver.domain.moves import move_definition, signed_move_angle
+from rubiksolver.rendering.data import (
     CUBE_EDGES,
     CUBE_FACE_NORMALS_AND_VERTICES,
     FACE_LABEL_BASIS,

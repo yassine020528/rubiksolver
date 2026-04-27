@@ -1,4 +1,4 @@
-from cube_types import Color
+from rubiksolver.domain.types import Color
 
 
 GRID_SIZE = 3
@@ -47,4 +47,3 @@ SOLVED_FACE_COLORS = {
     "front": "red",
     "back": "orange",
 }
-

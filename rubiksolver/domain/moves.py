@@ -1,4 +1,4 @@
-from cube_types import MoveDefinition
+from rubiksolver.domain.types import MoveDefinition
 
 
 MOVE_DEFINITIONS = {
@@ -30,4 +30,3 @@ def signed_move_angle(move: str) -> float:
     definition = move_definition(move)
     angle = definition.angle if is_clockwise(move) else -definition.angle
     return float(angle * move_turn_count(move))
-

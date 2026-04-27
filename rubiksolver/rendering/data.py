@@ -1,4 +1,4 @@
-from cube_config import FACE_LETTERS
+from rubiksolver.domain.config import FACE_LETTERS
 
 
 STICKER_FACE_VERTICES = {

@@ -11,8 +11,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from cube import RubiksCube
-from solver import CubeValidationError, describe_move, inverse_move, solve_cube
+from rubiksolver.domain.cube import RubiksCube
+from rubiksolver.solving.solver import (
+    CubeValidationError,
+    describe_move,
+    inverse_move,
+    solve_cube,
+)
 
 
 READY_MESSAGE = "Enter cube colors, then solve."

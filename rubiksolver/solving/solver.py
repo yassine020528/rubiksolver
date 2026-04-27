@@ -4,10 +4,10 @@ from collections import Counter
 
 import kociemba
 
-from cube import RubiksCube
-from cube_config import CUBE_COLORS, GRID_SIZE
-from cube_geometry import facelet_from_position
-from cube_types import Vector
+from rubiksolver.domain.config import CUBE_COLORS, GRID_SIZE
+from rubiksolver.domain.cube import RubiksCube
+from rubiksolver.domain.geometry import facelet_from_position
+from rubiksolver.domain.types import Vector
 
 
 SOLVER_FACE_ORDER = [

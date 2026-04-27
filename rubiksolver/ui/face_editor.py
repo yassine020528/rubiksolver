@@ -13,8 +13,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from cube import RubiksCube
-from cube_config import COLOR_HEX, CUBE_COLORS, FACE_NAMES, GRID_SIZE
+from rubiksolver.domain.config import COLOR_HEX, CUBE_COLORS, FACE_NAMES, GRID_SIZE
+from rubiksolver.domain.cube import RubiksCube
 
 
 class FaceEditor(QWidget):

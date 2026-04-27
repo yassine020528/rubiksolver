@@ -1,12 +1,12 @@
-from cube_config import CUBE_COLORS, GRID_SIZE, SOLVED_FACE_COLORS
-from cube_geometry import (
+from rubiksolver.domain.config import CUBE_COLORS, GRID_SIZE, SOLVED_FACE_COLORS
+from rubiksolver.domain.geometry import (
     CUBIES,
     facelet_from_position,
     iter_facelet_positions,
     rotate_vector,
 )
-from cube_moves import is_clockwise, move_definition, move_turn_count
-from cube_types import Cubie, FaceGrid, Vector
+from rubiksolver.domain.moves import is_clockwise, move_definition, move_turn_count
+from rubiksolver.domain.types import Cubie, FaceGrid, Vector
 
 
 class RubiksCube:

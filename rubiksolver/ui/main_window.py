@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
-from face_editor import FaceEditor
-from gl_widget import RubiksGLWidget
-from solve_panel import SolvePanel
+from rubiksolver.rendering.gl_widget import RubiksGLWidget
+from rubiksolver.ui.face_editor import FaceEditor
+from rubiksolver.ui.solve_panel import SolvePanel
 
 
 class MainWindow(QMainWindow):
