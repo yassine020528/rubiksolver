@@ -1,0 +1,5 @@
+PyQt6
+PyOpenGL
+PyOpenGL_accelerate
+kociemba
+numpy
