@@ -28,7 +28,17 @@ from OpenGL.GL import (
     glViewport,
 )
 
-from cube import MOVE_DEFINITIONS, RubiksCube
+from cube import RubiksCube
+from cube_moves import move_definition, signed_move_angle
+from render_data import (
+    CUBE_EDGES,
+    CUBE_FACE_NORMALS_AND_VERTICES,
+    FACE_LABEL_BASIS,
+    LETTER_SEGMENTS,
+    STICKER_FACE_VERTICES,
+    center_face_for_cubie,
+    label_for_face,
+)
 
 
 class RubiksGLWidget(QOpenGLWidget):
@@ -83,12 +93,8 @@ class RubiksGLWidget(QOpenGLWidget):
             return False
 
         self.active_move = move
-        definition = MOVE_DEFINITIONS[move[0]]
-        clockwise = not move.endswith("'")
         self.animation_angle = 0.0
-        self.animation_target = float(definition["angle"] if clockwise else -definition["angle"])
-        if move.endswith("2"):
-            self.animation_target *= 2.0
+        self.animation_target = signed_move_angle(move)
         self.animation_timer.start(16)
         return True
 
@@ -145,8 +151,12 @@ class RubiksGLWidget(QOpenGLWidget):
         glRotatef(self.x_rotation, 1.0, 0.0, 0.0)
         glRotatef(self.y_rotation, 0.0, 1.0, 0.0)
         if animation_angle is not None and self.active_move is not None:
-            axis = MOVE_DEFINITIONS[self.active_move[0]]["axis"]
-            axis_vector = (1.0 if axis == 0 else 0.0, 1.0 if axis == 1 else 0.0, 1.0 if axis == 2 else 0.0)
+            axis = move_definition(self.active_move).axis
+            axis_vector = (
+                1.0 if axis == 0 else 0.0,
+                1.0 if axis == 1 else 0.0,
+                1.0 if axis == 2 else 0.0,
+            )
             glRotatef(animation_angle, *axis_vector)
         glTranslatef(x * gap, y * gap, z * gap)
         glScalef(size, size, size)
@@ -159,9 +169,9 @@ class RubiksGLWidget(QOpenGLWidget):
     def _animation_angle_for(self, x: int, y: int, z: int) -> float | None:
         if self.active_move is None:
             return None
-        definition = MOVE_DEFINITIONS[self.active_move[0]]
+        definition = move_definition(self.active_move)
         coordinates = (x, y, z)
-        if coordinates[definition["axis"]] != definition["layer"]:
+        if coordinates[definition.axis] != definition.layer:
             return None
         return self.animation_angle
 
@@ -193,21 +203,9 @@ class RubiksGLWidget(QOpenGLWidget):
         self._draw_cube_faces(1.0)
 
     def _draw_stickers(self, stickers: dict[str, tuple[float, float, float]]) -> None:
-        inset = 0.82
-        offset = 1.01
-
-        faces = {
-            "front": ((0.0, 0.0, 1.0), [(-inset, -inset, offset), (inset, -inset, offset), (inset, inset, offset), (-inset, inset, offset)]),
-            "back": ((0.0, 0.0, -1.0), [(inset, -inset, -offset), (-inset, -inset, -offset), (-inset, inset, -offset), (inset, inset, -offset)]),
-            "right": ((1.0, 0.0, 0.0), [(offset, -inset, inset), (offset, -inset, -inset), (offset, inset, -inset), (offset, inset, inset)]),
-            "left": ((-1.0, 0.0, 0.0), [(-offset, -inset, -inset), (-offset, -inset, inset), (-offset, inset, inset), (-offset, inset, -inset)]),
-            "top": ((0.0, 1.0, 0.0), [(-inset, offset, inset), (inset, offset, inset), (inset, offset, -inset), (-inset, offset, -inset)]),
-            "bottom": ((0.0, -1.0, 0.0), [(-inset, -offset, -inset), (inset, -offset, -inset), (inset, -offset, inset), (-inset, -offset, inset)]),
-        }
-
         glBegin(GL_QUADS)
         for name, color in stickers.items():
-            normal, vertices = faces[name]
+            normal, vertices = STICKER_FACE_VERTICES[name]
             glColor3f(*color)
             glNormal3f(*normal)
             for vertex in vertices:
@@ -221,26 +219,9 @@ class RubiksGLWidget(QOpenGLWidget):
         z: int,
         stickers: dict[str, tuple[float, float, float]],
     ) -> None:
-        center_faces = {
-            "front": z == 1 and x == 0 and y == 0,
-            "back": z == -1 and x == 0 and y == 0,
-            "right": x == 1 and y == 0 and z == 0,
-            "left": x == -1 and y == 0 and z == 0,
-            "top": y == 1 and x == 0 and z == 0,
-            "bottom": y == -1 and x == 0 and z == 0,
-        }
-        letters = {
-            "front": "F",
-            "back": "B",
-            "right": "R",
-            "left": "L",
-            "top": "U",
-            "bottom": "D",
-        }
-
-        for face, is_center in center_faces.items():
-            if is_center and face in stickers:
-                self._draw_label_on_face(face, letters[face], stickers[face])
+        face = center_face_for_cubie(x, y, z)
+        if face is not None and face in stickers:
+            self._draw_label_on_face(face, label_for_face(face), stickers[face])
 
     def _draw_label_on_face(
         self,
@@ -283,20 +264,7 @@ class RubiksGLWidget(QOpenGLWidget):
         glColor3f(0.0, 0.0, 0.0)
         glLineWidth(2.0)
         glBegin(GL_LINES)
-        for start, end in (
-            ((-1, -1, -1), (1, -1, -1)),
-            ((1, -1, -1), (1, 1, -1)),
-            ((1, 1, -1), (-1, 1, -1)),
-            ((-1, 1, -1), (-1, -1, -1)),
-            ((-1, -1, 1), (1, -1, 1)),
-            ((1, -1, 1), (1, 1, 1)),
-            ((1, 1, 1), (-1, 1, 1)),
-            ((-1, 1, 1), (-1, -1, 1)),
-            ((-1, -1, -1), (-1, -1, 1)),
-            ((1, -1, -1), (1, -1, 1)),
-            ((1, 1, -1), (1, 1, 1)),
-            ((-1, 1, -1), (-1, 1, 1)),
-        ):
+        for start, end in CUBE_EDGES:
             glVertex3f(*start)
             glVertex3f(*end)
         glEnd()
@@ -304,122 +272,9 @@ class RubiksGLWidget(QOpenGLWidget):
     def _draw_cube_faces(self, size: float) -> None:
         glBegin(GL_QUADS)
 
-        glNormal3f(0.0, 0.0, 1.0)
-        glVertex3f(-size, -size, size)
-        glVertex3f(size, -size, size)
-        glVertex3f(size, size, size)
-        glVertex3f(-size, size, size)
-
-        glNormal3f(0.0, 0.0, -1.0)
-        glVertex3f(size, -size, -size)
-        glVertex3f(-size, -size, -size)
-        glVertex3f(-size, size, -size)
-        glVertex3f(size, size, -size)
-
-        glNormal3f(1.0, 0.0, 0.0)
-        glVertex3f(size, -size, size)
-        glVertex3f(size, -size, -size)
-        glVertex3f(size, size, -size)
-        glVertex3f(size, size, size)
-
-        glNormal3f(-1.0, 0.0, 0.0)
-        glVertex3f(-size, -size, -size)
-        glVertex3f(-size, -size, size)
-        glVertex3f(-size, size, size)
-        glVertex3f(-size, size, -size)
-
-        glNormal3f(0.0, 1.0, 0.0)
-        glVertex3f(-size, size, size)
-        glVertex3f(size, size, size)
-        glVertex3f(size, size, -size)
-        glVertex3f(-size, size, -size)
-
-        glNormal3f(0.0, -1.0, 0.0)
-        glVertex3f(-size, -size, -size)
-        glVertex3f(size, -size, -size)
-        glVertex3f(size, -size, size)
-        glVertex3f(-size, -size, size)
+        for normal, vertices in CUBE_FACE_NORMALS_AND_VERTICES:
+            glNormal3f(*normal)
+            for x, y, z in vertices:
+                glVertex3f(x * size, y * size, z * size)
 
         glEnd()
-
-
-FACE_LABEL_BASIS = {
-    "front": {
-        "normal": (0.0, 0.0, 1.0),
-        "right": (1.0, 0.0, 0.0),
-        "up": (0.0, 1.0, 0.0),
-    },
-    "back": {
-        "normal": (0.0, 0.0, -1.0),
-        "right": (-1.0, 0.0, 0.0),
-        "up": (0.0, 1.0, 0.0),
-    },
-    "right": {
-        "normal": (1.0, 0.0, 0.0),
-        "right": (0.0, 0.0, -1.0),
-        "up": (0.0, 1.0, 0.0),
-    },
-    "left": {
-        "normal": (-1.0, 0.0, 0.0),
-        "right": (0.0, 0.0, 1.0),
-        "up": (0.0, 1.0, 0.0),
-    },
-    "top": {
-        "normal": (0.0, 1.0, 0.0),
-        "right": (1.0, 0.0, 0.0),
-        "up": (0.0, 0.0, -1.0),
-    },
-    "bottom": {
-        "normal": (0.0, -1.0, 0.0),
-        "right": (-1.0, 0.0, 0.0),
-        "up": (0.0, 0.0, -1.0),
-    },
-}
-
-LETTER_SEGMENTS = {
-    "F": [
-        ((-0.55, -0.65), (-0.55, 0.65)),
-        ((-0.55, 0.65), (0.5, 0.65)),
-        ((-0.55, 0.05), (0.35, 0.05)),
-    ],
-    "B": [
-        ((-0.5, -0.65), (-0.5, 0.65)),
-        ((-0.5, 0.65), (0.32, 0.65)),
-        ((0.32, 0.65), (0.5, 0.42)),
-        ((0.5, 0.42), (0.5, 0.12)),
-        ((0.5, 0.12), (0.32, 0.0)),
-        ((-0.5, 0.0), (0.32, 0.0)),
-        ((0.32, 0.0), (0.5, -0.18)),
-        ((0.5, -0.18), (0.5, -0.48)),
-        ((0.5, -0.48), (0.32, -0.65)),
-        ((-0.5, -0.65), (0.32, -0.65)),
-    ],
-    "R": [
-        ((-0.5, -0.65), (-0.5, 0.65)),
-        ((-0.5, 0.65), (0.35, 0.65)),
-        ((0.35, 0.65), (0.5, 0.42)),
-        ((0.5, 0.42), (0.5, 0.12)),
-        ((0.5, 0.12), (0.32, 0.0)),
-        ((-0.5, 0.0), (0.32, 0.0)),
-        ((-0.05, 0.0), (0.55, -0.65)),
-    ],
-    "L": [
-        ((-0.45, 0.65), (-0.45, -0.65)),
-        ((-0.45, -0.65), (0.5, -0.65)),
-    ],
-    "U": [
-        ((-0.5, 0.65), (-0.5, -0.4)),
-        ((0.5, 0.65), (0.5, -0.4)),
-        ((-0.5, -0.4), (-0.25, -0.65)),
-        ((0.5, -0.4), (0.25, -0.65)),
-        ((-0.25, -0.65), (0.25, -0.65)),
-    ],
-    "D": [
-        ((-0.5, -0.65), (-0.5, 0.65)),
-        ((-0.5, 0.65), (0.2, 0.65)),
-        ((0.2, 0.65), (0.5, 0.35)),
-        ((0.5, 0.35), (0.5, -0.35)),
-        ((0.5, -0.35), (0.2, -0.65)),
-        ((-0.5, -0.65), (0.2, -0.65)),
-    ],
-}

@@ -13,7 +13,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from cube import COLOR_HEX, CUBE_COLORS, FACE_NAMES, RubiksCube
+from cube import RubiksCube
+from cube_config import COLOR_HEX, CUBE_COLORS, FACE_NAMES, GRID_SIZE
 
 
 class FaceEditor(QWidget):
@@ -50,9 +51,9 @@ class FaceEditor(QWidget):
         grid_layout = QGridLayout(grid_frame)
         grid_layout.setSpacing(6)
 
-        for row in range(3):
+        for row in range(GRID_SIZE):
             button_row: list[QPushButton] = []
-            for col in range(3):
+            for col in range(GRID_SIZE):
                 button = QPushButton()
                 button.setFixedSize(64, 64)
                 button.clicked.connect(
@@ -130,8 +131,8 @@ class FaceEditor(QWidget):
         self._refresh_grid()
 
     def _refresh_grid(self) -> None:
-        for row in range(3):
-            for col in range(3):
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
                 color_name = self.cube.get_sticker(self.current_face, row, col)
                 self.sticker_buttons[row][col].setStyleSheet(
                     self._button_style(COLOR_HEX[color_name], border="#20242a")

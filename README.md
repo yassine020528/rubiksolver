@@ -111,19 +111,32 @@ Clockwise and counter-clockwise are interpreted as if you are looking directly a
 
 ```text
 rubiksolver/
-|-- cube.py          # Cube facelet model, sticker mapping, and move application
-|-- face_editor.py   # 2D color-entry panel
-|-- gl_widget.py     # OpenGL rendering, camera controls, labels, and animations
-|-- main.py          # Application entry point
-|-- main_window.py   # Main PyQt window layout and signal wiring
-|-- solver.py        # Validation, Kociemba conversion, solving, and move helpers
-|-- solve_panel.py   # Solver UI, guide, next/back/auto-play controls
-`-- requirements.txt # Python dependencies
+|-- cube.py           # Editable cube state and move application
+|-- cube_config.py    # Face names, color values, and solved layout
+|-- cube_geometry.py  # Cubie positions, facelet mapping, and vector rotation
+|-- cube_moves.py     # Move definitions and move parsing helpers
+|-- cube_types.py     # Shared dataclasses and type aliases
+|-- face_editor.py    # 2D color-entry panel
+|-- gl_widget.py      # OpenGL view, camera controls, and animation flow
+|-- main.py           # Application entry point
+|-- main_window.py    # Main PyQt window layout and signal wiring
+|-- render_data.py    # OpenGL mesh, sticker, edge, and label drawing data
+|-- solver.py         # Validation, Kociemba conversion, solving, and move helpers
+|-- solve_panel.py    # Solver UI, guide, next/back/auto-play controls
+`-- requirements.txt  # Python dependencies
 ```
 
 ## How It Works
 
-The app stores the cube as six editable 3x3 face grids. The OpenGL widget maps those face stickers onto a rendered 3D cube.
+The app stores the cube as six editable 3x3 face grids in `RubiksCube`. Shared cube constants, geometry mapping, move definitions, and rendering data live in separate modules so the model, solver, UI, and OpenGL view stay independent.
+
+The main responsibilities are:
+
+- `cube.py` owns the current sticker state and applies moves.
+- `cube_geometry.py` converts between face-grid coordinates and 3D cubie positions.
+- `cube_moves.py` describes face turns and normalizes move details for the model and animation.
+- `solver.py` validates the cube and converts it into Kociemba's `URFDLB` facelet order.
+- `gl_widget.py` reads sticker colors from the model and renders/animates the 3D cube using data from `render_data.py`.
 
 When you click `Solve`, the app:
 
@@ -146,7 +159,7 @@ When you click `Solve`, the app:
 Run a quick syntax check with:
 
 ```powershell
-python -m py_compile main.py main_window.py gl_widget.py cube.py face_editor.py solve_panel.py solver.py
+python -m py_compile main.py main_window.py gl_widget.py cube.py face_editor.py solve_panel.py solver.py cube_config.py cube_geometry.py cube_moves.py cube_types.py render_data.py
 ```
 
 The solver can be tested by scrambling the model in code, solving it, applying the returned moves, and confirming the cube returns to solved state.

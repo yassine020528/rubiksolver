@@ -4,7 +4,10 @@ from collections import Counter
 
 import kociemba
 
-from cube import CUBE_COLORS, Vector, facelet_from_position, RubiksCube
+from cube import RubiksCube
+from cube_config import CUBE_COLORS, GRID_SIZE
+from cube_geometry import facelet_from_position
+from cube_types import Vector
 
 
 SOLVER_FACE_ORDER = [
@@ -78,8 +81,8 @@ def cube_to_kociemba_state(cube: RubiksCube) -> str:
 def validate_cube(cube: RubiksCube) -> None:
     counts = Counter()
     for face, _facelet in SOLVER_FACE_ORDER:
-        for row in range(3):
-            for col in range(3):
+        for row in range(GRID_SIZE):
+            for col in range(GRID_SIZE):
                 counts[cube.get_sticker(face, row, col)] += 1
 
     missing_counts = [
@@ -95,7 +98,9 @@ def validate_cube(cube: RubiksCube) -> None:
 
     centers = [cube.get_sticker(face, 1, 1) for face, _facelet in SOLVER_FACE_ORDER]
     if len(set(centers)) != 6:
-        raise CubeValidationError("The six center stickers must all use different colors.")
+        raise CubeValidationError(
+            "The six center stickers must all use different colors."
+        )
 
 
 def describe_move(move: str) -> str:

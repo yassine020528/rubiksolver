@@ -15,6 +15,9 @@ from cube import RubiksCube
 from solver import CubeValidationError, describe_move, inverse_move, solve_cube
 
 
+READY_MESSAGE = "Enter cube colors, then solve."
+
+
 class SolvePanel(QWidget):
     move_requested = pyqtSignal(str)
 
@@ -34,14 +37,7 @@ class SolvePanel(QWidget):
         self._sync_buttons()
 
     def clear_solution(self) -> None:
-        self.solution = []
-        self.current_index = 0
-        self.auto_playing = False
-        self.auto_timer.stop()
-        self.solution_list.clear()
-        self.status_label.setText("Enter cube colors, then solve.")
-        self.guide_label.setText("")
-        self._sync_buttons()
+        self._reset_solution_state(READY_MESSAGE)
 
     def solve(self) -> None:
         if self.is_animating:
@@ -50,27 +46,14 @@ class SolvePanel(QWidget):
         try:
             self.solution = solve_cube(self.cube)
         except CubeValidationError as error:
-            self.status_label.setText(str(error))
-            self.solution = []
-            self.current_index = 0
-            self.solution_list.clear()
-            self.guide_label.setText("")
-            self._sync_buttons()
+            self._reset_solution_state(str(error))
             return
         except Exception as error:
-            self.status_label.setText(f"Solver rejected this cube: {error}")
-            self.solution = []
-            self.current_index = 0
-            self.solution_list.clear()
-            self.guide_label.setText("")
-            self._sync_buttons()
+            self._reset_solution_state(f"Solver rejected this cube: {error}")
             return
 
         self.current_index = 0
-        self.solution_list.clear()
-        for index, move in enumerate(self.solution, start=1):
-            item = QListWidgetItem(f"{index}. {move} - {describe_move(move)}")
-            self.solution_list.addItem(item)
+        self._render_solution()
 
         if self.solution:
             self.status_label.setText(f"Solution found: {len(self.solution)} moves.")
@@ -138,7 +121,7 @@ class SolvePanel(QWidget):
         title.setObjectName("panelTitle")
         root.addWidget(title)
 
-        self.status_label = QLabel("Enter cube colors, then solve.")
+        self.status_label = QLabel(READY_MESSAGE)
         self.status_label.setWordWrap(True)
         root.addWidget(self.status_label)
 
@@ -176,6 +159,22 @@ class SolvePanel(QWidget):
             }
             """
         )
+
+    def _reset_solution_state(self, status: str) -> None:
+        self.solution = []
+        self.current_index = 0
+        self.auto_playing = False
+        self.auto_timer.stop()
+        self.solution_list.clear()
+        self.status_label.setText(status)
+        self.guide_label.setText("")
+        self._sync_buttons()
+
+    def _render_solution(self) -> None:
+        self.solution_list.clear()
+        for index, move in enumerate(self.solution, start=1):
+            item = QListWidgetItem(f"{index}. {move} - {describe_move(move)}")
+            self.solution_list.addItem(item)
 
     def _show_current_guide(self) -> None:
         for row in range(self.solution_list.count()):
